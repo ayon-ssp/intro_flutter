@@ -81,9 +81,26 @@ class Transaction {
     category: json['category'],
     date: DateTime.parse(json['date']),
     isExpense: json['isExpense'],
-    icon: IconData(json['iconCodePoint'], fontFamily: 'MaterialIcons'),
+    icon: _getIconFromCodePoint(json['iconCodePoint']),
     color: Color(json['colorValue']),
   );
+
+  static IconData _getIconFromCodePoint(int codePoint) {
+    // Map common code points to const IconData instances
+    switch (codePoint) {
+      case 0xe530: return Icons.shopping_cart;
+      case 0xe5c3: return Icons.restaurant;
+      case 0xe571: return Icons.local_gas_station;
+      case 0xe579: return Icons.directions_car;
+      case 0xe88a: return Icons.home;
+      case 0xe8d0: return Icons.movie;
+      case 0xe263: return Icons.health_and_safety;
+      case 0xe80c: return Icons.school;
+      case 0xe85d: return Icons.flight;
+      case 0xe227: return Icons.shopping_bag;
+      default: return Icons.category; // fallback icon
+    }
+  }
 }
 
 class FinanceTrackerHome extends StatefulWidget {
