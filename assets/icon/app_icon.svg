@@ -1,0 +1,69 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F8FAFC;stop-opacity:0.9" />
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle with Gradient -->
+  <circle cx="256" cy="256" r="240" fill="url(#backgroundGradient)" filter="url(#shadow)"/>
+  
+  <!-- Inner Circle for depth -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  
+  <!-- Wallet Base -->
+  <rect x="180" y="200" width="152" height="112" rx="16" ry="16" fill="url(#iconGradient)" opacity="0.95"/>
+  
+  <!-- Wallet Card Slots -->
+  <rect x="192" y="220" width="128" height="8" rx="4" ry="4" fill="rgba(99,102,241,0.3)"/>
+  <rect x="192" y="235" width="128" height="8" rx="4" ry="4" fill="rgba(99,102,241,0.2)"/>
+  <rect x="192" y="250" width="128" height="8" rx="4" ry="4" fill="rgba(99,102,241,0.1)"/>
+  
+  <!-- Dollar Sign -->
+  <text x="256" y="290" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
+        text-anchor="middle" fill="#6366F1">$</text>
+  
+  <!-- Chart Lines representing analytics -->
+  <g opacity="0.8">
+    <!-- Chart line 1 -->
+    <path d="M 140 350 Q 180 320 220 340 T 300 320" stroke="#FFFFFF" stroke-width="4" fill="none" 
+          stroke-linecap="round" opacity="0.7"/>
+    
+    <!-- Chart line 2 -->
+    <path d="M 140 370 Q 180 360 220 380 T 300 360" stroke="#FFFFFF" stroke-width="4" fill="none" 
+          stroke-linecap="round" opacity="0.5"/>
+    
+    <!-- Data points -->
+    <circle cx="140" cy="350" r="6" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="180" cy="330" r="6" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="220" cy="340" r="6" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="260" cy="320" r="6" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="300" cy="320" r="6" fill="#FFFFFF" opacity="0.8"/>
+  </g>
+  
+  <!-- Floating coins for visual appeal -->
+  <g opacity="0.6">
+    <circle cx="360" cy="180" r="16" fill="rgba(255,255,255,0.8)"/>
+    <text x="360" y="188" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+          text-anchor="middle" fill="#6366F1">¢</text>
+    
+    <circle cx="380" cy="220" r="12" fill="rgba(255,255,255,0.6)"/>
+    <text x="380" y="227" font-family="Arial, sans-serif" font-size="12" font-weight="bold" 
+          text-anchor="middle" fill="#8B5CF6">¢</text>
+  </g>
+  
+  <!-- Arrow indicating growth -->
+  <g opacity="0.7" transform="translate(340, 280)">
+    <path d="M 0 20 L 0 0 L 20 10 Z" fill="#FFFFFF" stroke="none"/>
+    <path d="M 0 0 L 0 20" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
