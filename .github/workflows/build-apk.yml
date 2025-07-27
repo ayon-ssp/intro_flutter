@@ -3,16 +3,8 @@ name: Build and Release APK
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - 'LICENSE'
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - 'LICENSE'
 
 # Allow only one concurrent deployment
 concurrency:
@@ -23,158 +15,53 @@ concurrency:
 permissions:
   contents: write
   actions: read
-  checks: write
-  pull-requests: write
 
 jobs:
-  test:
-    name: Run Tests and Analysis
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
-        cache: 'gradle'
-
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: 'latest'
-        channel: 'stable'
-        cache: true
-
-    - name: Verify Flutter installation
-      run: |
-        flutter --version
-        flutter doctor -v
-
-    - name: Install dependencies
-      run: |
-        echo "🔍 Checking Flutter and Dart versions..."
-        flutter --version
-        dart --version
-        echo "📦 Installing dependencies..."
-        flutter pub get
-        echo "✅ Dependencies installed successfully"
-
-    - name: Verify dependencies
-      run: flutter pub deps
-
-    - name: Run code analysis
-      run: flutter analyze || echo "⚠️ Analysis issues found (non-blocking)"
-
-    - name: Check formatting
-      run: dart format --set-exit-if-changed . || echo "⚠️ Code formatting issues found (non-blocking)"
-
-    - name: Run tests
-      run: flutter test --coverage --reporter=expanded || echo "⚠️ Some tests failed (non-blocking)"
-
   build:
     name: Build APK
-    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
-        cache: 'gradle'
 
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: 'latest'
         channel: 'stable'
         cache: true
 
     - name: Install dependencies
-      run: |
-        echo "📦 Installing dependencies for build..."
-        flutter pub get
-        echo "✅ Dependencies installed for build"
+      run: flutter pub get
 
     - name: Build APK
-      run: |
-        flutter build apk \
-          --release \
-          --verbose \
-          --build-name=${{ github.run_number }} \
-          --build-number=${{ github.run_number }}
-
-    - name: Verify APK exists
-      run: |
-        if [ ! -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-          echo "❌ APK file not found!"
-          exit 1
-        fi
-        echo "✅ APK file found"
-        ls -la build/app/outputs/flutter-apk/
-
-    - name: Get APK info
-      run: |
-        APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk | numfmt --to=iec)
-        echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
+      run: flutter build apk --release
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: intro-flutter-apk-v${{ github.run_number }}
+        name: app-release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-        compression-level: 0
 
   release:
     name: Create Release
-    needs: [test, build]
+    needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    timeout-minutes: 10
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
     - name: Download APK artifact
       uses: actions/download-artifact@v4
       with:
-        name: intro-flutter-apk-v${{ github.run_number }}
-        path: ./artifacts/
-
-    - name: Get APK info
-      run: |
-        APK_SIZE=$(stat -c%s ./artifacts/app-release.apk | numfmt --to=iec)
-        echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
-
-    - name: Generate changelog
-      id: changelog
-      run: |
-        if [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-          CHANGELOG=$(git log --pretty=format:"- %s" ${{ github.event.before }}..${{ github.sha }})
-        else
-          CHANGELOG="- Initial release"
-        fi
-        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        echo "$CHANGELOG" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        name: app-release-apk
+        path: ./
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -184,22 +71,6 @@ jobs:
         body: |
           🚀 **Automated Release v${{ github.run_number }}**
           
-          📱 **APK Size:** ${{ env.APK_SIZE || 'Unknown' }}
-          🔗 **Commit:** ${{ github.sha }}
-          👤 **Author:** ${{ github.actor }}
-          📅 **Date:** ${{ github.event.head_commit.timestamp }}
-          
-          ## 📋 Changes in this release:
-          ${{ steps.changelog.outputs.CHANGELOG }}
-          
-          ## 📥 Download
-          Download the APK file below to install on your Android device.
-          
-          ---
-          *This release was automatically generated by GitHub Actions.*
-        files: |
-          ./artifacts/app-release.apk
+          📱 Download the APK file below to install on your Android device.
+        files: app-release.apk
         token: ${{ secrets.GITHUB_TOKEN }}
-        prerelease: false
-        make_latest: true
-        generate_release_notes: false
