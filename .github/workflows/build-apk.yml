@@ -48,7 +48,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.1'
+        flutter-version: 'latest'
         channel: 'stable'
         cache: true
 
@@ -58,7 +58,13 @@ jobs:
         flutter doctor -v
 
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        echo "🔍 Checking Flutter and Dart versions..."
+        flutter --version
+        dart --version
+        echo "📦 Installing dependencies..."
+        flutter pub get
+        echo "✅ Dependencies installed successfully"
 
     - name: Verify dependencies
       run: flutter pub deps
@@ -94,12 +100,15 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.1'
+        flutter-version: 'latest'
         channel: 'stable'
         cache: true
 
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        echo "📦 Installing dependencies for build..."
+        flutter pub get
+        echo "✅ Dependencies installed for build"
 
     - name: Build APK
       run: |
