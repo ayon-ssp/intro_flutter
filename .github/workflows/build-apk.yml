@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-# Allow only one concurrent deployment
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,77 +15,71 @@ permissions:
   actions: read
 
 jobs:
-  build:
-    name: Build APK and AAB
+  build-apk:
+    name: Build APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
+    timeout-minutes: 20
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --release --no-tree-shake-icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
-
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-        cache: true
-
-    - name: Install dependencies
-      run: flutter pub get
-
-    - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
-
-    - name: Build App Bundle (AAB)
-      run: flutter build appbundle --release --no-tree-shake-icons
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
-
-    - name: Upload AAB artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release-aab
-        path: build/app/outputs/bundle/release/app-release.aab
+  build-aab:
+    name: Build AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
+      - run: flutter build appbundle --release --no-tree-shake-icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
 
   release:
     name: Create Release
-    needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+    needs: [build-apk, build-aab]
+    if: github.ref == 'refs/heads/main'
     steps:
-    - name: Download APK artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: app-release-apk
-        path: ./
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-release-apk
+          path: ./
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-release-aab
+          path: ./
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            🚀 **Automated Release v${{ github.run_number }}**
 
-    - name: Download AAB artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: app-release-aab
-        path: ./
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        body: |
-          🚀 **Automated Release v${{ github.run_number }}**
-
-          📱 Download the APK or AAB file below to install on your Android device or upload to Play Store.
-        files: |
-          app-release.apk
-          app-release.aab
-        token: ${{ secrets.GITHUB_TOKEN }}
+            📱 Download the APK or AAB file below to install on your Android device or upload to Play Store.
+          files: |
+            app-release.apk
+            app-release.aab
+          token: ${{ secrets.GITHUB_TOKEN }}
