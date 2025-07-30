@@ -1,4 +1,4 @@
-name: Build and Release APK
+name: Build and Release APK and AAB
 
 on:
   push:
@@ -11,14 +11,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Set permissions for GITHUB_TOKEN
 permissions:
   contents: write
   actions: read
 
 jobs:
   build:
-    name: Build APK
+    name: Build APK and AAB
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
@@ -44,11 +43,20 @@ jobs:
     - name: Build APK
       run: flutter build apk --release --no-tree-shake-icons
 
+    - name: Build App Bundle (AAB)
+      run: flutter build appbundle --release --no-tree-shake-icons
+
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
+
+    - name: Upload AAB artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release-aab
+        path: build/app/outputs/bundle/release/app-release.aab
 
   release:
     name: Create Release
@@ -63,6 +71,12 @@ jobs:
         name: app-release-apk
         path: ./
 
+    - name: Download AAB artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: app-release-aab
+        path: ./
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -70,7 +84,9 @@ jobs:
         name: Release v${{ github.run_number }}
         body: |
           🚀 **Automated Release v${{ github.run_number }}**
-          
-          📱 Download the APK file below to install on your Android device.
-        files: app-release.apk
+
+          📱 Download the APK or AAB file below to install on your Android device or upload to Play Store.
+        files: |
+          app-release.apk
+          app-release.aab
         token: ${{ secrets.GITHUB_TOKEN }}
