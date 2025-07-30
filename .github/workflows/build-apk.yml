@@ -38,6 +38,7 @@ jobs:
 
   build-aab:
     name: Build AAB
+    if: github.event_name == 'push' # 👈 Only run AAB build on direct push
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
