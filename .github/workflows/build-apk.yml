@@ -15,51 +15,79 @@ permissions:
   actions: read
 
 jobs:
-  build-apk:
-    name: Build APK
+  setup:
+    name: Setup Flutter Environment
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    outputs:
+      workspace-path: ${{ steps.set-output.outputs.workspace-path }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      - uses: subosito/flutter-action@v2
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
-      - run: flutter pub get
-      - run: flutter build apk --release --no-tree-shake-icons
-      - uses: actions/upload-artifact@v4
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Save workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-workspace
+          path: .
+  
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Download workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-workspace
+          path: .
+
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
   build-aab:
     name: Build AAB
-    if: github.event_name == 'push' # 👈 Only run AAB build on direct push
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    needs: setup
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Download workspace
+        uses: actions/download-artifact@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-      - run: flutter pub get
-      - run: flutter build appbundle --release --no-tree-shake-icons
-      - uses: actions/upload-artifact@v4
+          name: flutter-workspace
+          path: .
+
+      - name: Build AAB
+        run: flutter build appbundle --release --no-tree-shake-icons
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
 
   release:
-    name: Create Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [build-apk, build-aab]
     if: github.ref == 'refs/heads/main'
@@ -68,10 +96,12 @@ jobs:
         with:
           name: app-release-apk
           path: ./
+
       - uses: actions/download-artifact@v4
         with:
           name: app-release-aab
           path: ./
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
